@@ -1,0 +1,10 @@
+{
+  "id": "upl_test1",
+  "method": "PUT",
+  "url": "https://storage.example.com/sources/upl_test1.zip?X-Amz-Signature=placeholder",
+  "headers": {
+    "Content-Type": "application/zip"
+  },
+  "expires_at": "2026-11-10T09:40:00Z",
+  "max_bytes": 104857600
+}

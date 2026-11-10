@@ -1,0 +1,48 @@
+{
+  "workflows": [
+    {
+      "name": "send-digest",
+      "description": "Weekly digest",
+      "schedule": "0 8 * * 1",
+      "event": null,
+      "retries": 3,
+      "trigger_text": "Mondays at 08:00",
+      "last_run": {
+        "id": "run_test1",
+        "state": "succeeded",
+        "at": "2026-11-10T09:30:00Z"
+      },
+      "success_rate": 0.98
+    }
+  ],
+  "runs": [
+    {
+      "id": "run_test1",
+      "workflow": "send-digest",
+      "state": "running",
+      "trigger": "manual",
+      "trigger_text": "Run by Test User",
+      "started_by": {
+        "id": "usr_test1",
+        "name": "Test User",
+        "email": "person@example.com",
+        "avatar_url": null
+      },
+      "started_at": "2026-11-10T09:30:00Z",
+      "finished_at": null,
+      "seconds": 3,
+      "deployment": {
+        "id": "dpl_test1",
+        "sha": null
+      },
+      "input": {
+        "week": 45
+      },
+      "output": null,
+      "error": [],
+      "attempts": "1",
+      "next_at": null,
+      "steps": []
+    }
+  ]
+}

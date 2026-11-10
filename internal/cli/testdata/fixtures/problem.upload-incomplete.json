@@ -1,0 +1,8 @@
+{
+  "type": "about:blank",
+  "title": "Conflict",
+  "status": 409,
+  "detail": "The upload has not arrived yet.",
+  "code": "upload_incomplete",
+  "request_id": "req_test4"
+}

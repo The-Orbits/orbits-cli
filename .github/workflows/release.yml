@@ -1,0 +1,68 @@
+name: Release
+
+# Push a tag to release:  git tag v0.1.0 && git push origin v0.1.0
+# GoReleaser builds macOS and Linux (amd64, arm64), publishes the archives and
+# checksums.txt on the GitHub release, and updates the cask in
+# The-Orbits/homebrew-tap.
+# A tag with a hyphen (v0.2.0-rc.1) is a pre-release: not "latest", and the
+# cask stays where it was.
+#
+# Needs the secret HOMEBREW_TAP_TOKEN: a token that may push to
+# The-Orbits/homebrew-tap (nothing else).
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      # A release is built from go.sum alone: no workspace, no replace.
+      - name: orbits-go is a published version
+        run: |
+          grep -q '^github.com/The-Orbits/orbits-go ' go.sum || {
+            echo "::error::go.sum has no orbits-go: publish it, then run go get github.com/The-Orbits/orbits-go@<version> && go mod tidy"; exit 1; }
+
+      - name: CHANGELOG.md has this version
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          case "$VERSION" in
+            *-*) echo "a pre-release: no changelog section needed"; echo "Pre-release $VERSION." > "$RUNNER_TEMP/notes.md" ;;
+            *)
+              grep -q "^## $VERSION " CHANGELOG.md || { echo "::error::CHANGELOG.md has no '## $VERSION' section"; exit 1; }
+              awk -v v="## $VERSION " 'index($0, v) == 1 {on=1; next} /^## / {on=0} on' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+              ;;
+          esac
+
+      - run: go vet ./...
+
+      - run: go test -race ./...
+
+      - run: bash -n install.sh
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean --release-notes ${{ runner.temp }}/notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}

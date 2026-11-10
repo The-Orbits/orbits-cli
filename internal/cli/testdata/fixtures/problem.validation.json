@@ -1,0 +1,13 @@
+{
+  "type": "about:blank",
+  "title": "Unprocessable Entity",
+  "status": 422,
+  "detail": "Validation failed",
+  "request_id": "req_test1",
+  "errors": [
+    {
+      "field": "name",
+      "message": "must be 1 to 100 characters"
+    }
+  ]
+}

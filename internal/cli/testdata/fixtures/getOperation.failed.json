@@ -1,0 +1,14 @@
+{
+  "id": "op_test1",
+  "kind": "project.delete",
+  "state": "failed",
+  "resource": "prj_test1",
+  "created_at": "2026-11-10T09:30:00Z",
+  "finished_at": "2026-11-10T09:30:05Z",
+  "error": {
+    "type": "about:blank",
+    "title": "Service Unavailable",
+    "status": 503,
+    "detail": "The project's domains could not be detached. Try again."
+  }
+}

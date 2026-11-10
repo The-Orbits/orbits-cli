@@ -1,0 +1,43 @@
+{
+  "as_of": "2026-11-10T09:30:00Z",
+  "items": [
+    {
+      "id": "act_test1",
+      "type": "deployment.ready",
+      "category": "deployments",
+      "actor": {
+        "kind": "user",
+        "user_id": "usr_test1",
+        "name": "Test User"
+      },
+      "summary": "Test User deployed web to production",
+      "project_id": "prj_test1",
+      "project": {
+        "id": "prj_test1",
+        "name": "web",
+        "slug": "web"
+      },
+      "deployment_id": "dpl_test1",
+      "failed": false,
+      "created_at": "2026-11-10T09:30:00Z"
+    }
+  ],
+  "total": 1,
+  "total_capped": false,
+  "next_cursor": null,
+  "any": true,
+  "people": [
+    {
+      "id": "usr_test1",
+      "name": "Test User"
+    }
+  ],
+  "projects": [
+    {
+      "id": "prj_test1",
+      "name": "web",
+      "slug": "web",
+      "plan": "free"
+    }
+  ]
+}

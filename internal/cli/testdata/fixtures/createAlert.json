@@ -1,0 +1,19 @@
+{
+  "id": "alr_test1",
+  "name": "Errors",
+  "metric": "error-rate",
+  "direction": "above",
+  "threshold": 5,
+  "window_minutes": 5,
+  "routes": [],
+  "channels": [
+    "email"
+  ],
+  "on": true,
+  "state": "ok",
+  "since": "2026-11-10T09:30:00Z",
+  "last_value": null,
+  "checked_at": null,
+  "created_at": "2026-11-10T09:30:00Z",
+  "updated_at": "2026-11-10T09:30:00Z"
+}

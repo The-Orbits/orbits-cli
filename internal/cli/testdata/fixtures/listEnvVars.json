@@ -1,0 +1,67 @@
+{
+  "items": [
+    {
+      "id": "var_next_public_site_name",
+      "key": "NEXT_PUBLIC_SITE_NAME",
+      "value": "Storefront",
+      "sensitive": false,
+      "environments": [
+        "production",
+        "preview"
+      ],
+      "pending_redeploy": false,
+      "created_at": "2026-11-10T09:30:00Z",
+      "updated_at": "2026-11-10T09:30:00Z",
+      "updated_by": {
+        "id": "usr_test1",
+        "name": "Test User"
+      }
+    },
+    {
+      "id": "var_database_url",
+      "key": "DATABASE_URL",
+      "value": null,
+      "sensitive": true,
+      "environments": [
+        "production",
+        "preview"
+      ],
+      "pending_redeploy": false,
+      "created_at": "2026-11-10T09:30:00Z",
+      "updated_at": "2026-11-10T09:30:00Z",
+      "updated_by": {
+        "id": "usr_test1",
+        "name": "Test User"
+      }
+    },
+    {
+      "id": "var_log_level",
+      "key": "LOG_LEVEL",
+      "value": null,
+      "sensitive": false,
+      "environments": [
+        "development"
+      ],
+      "pending_redeploy": false,
+      "created_at": "2026-11-10T09:30:00Z",
+      "updated_at": "2026-11-10T09:30:00Z",
+      "updated_by": {
+        "id": "usr_test1",
+        "name": "Test User"
+      }
+    }
+  ],
+  "total": 3,
+  "last_changed": {
+    "at": "2026-11-10T09:30:00Z",
+    "by": {
+      "id": "usr_test1",
+      "name": "Test User"
+    }
+  },
+  "redeploy": {
+    "changed": 0,
+    "required": false
+  },
+  "next_cursor": null
+}

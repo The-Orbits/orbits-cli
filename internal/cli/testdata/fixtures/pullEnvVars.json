@@ -1,0 +1,10 @@
+{
+  "environment": "development",
+  "variables": {
+    "LOG_LEVEL": "debug",
+    "GREETING": "hello \"world\"\nline two $HOME"
+  },
+  "skipped_sensitive": [
+    "DATABASE_URL"
+  ]
+}

@@ -1,0 +1,272 @@
+// Package output prints for people (aligned columns, state symbols, colour in
+// a terminal) or for programs (--json: the API's own body; piped: plain text).
+package output
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"regexp"
+	"strings"
+	"unicode/utf8"
+
+	"golang.org/x/term"
+)
+
+// Printer writes results to Out and everything else (progress, hints,
+// summaries) to Err, so stdout pipes cleanly.
+type Printer struct {
+	Out, Err io.Writer
+	JSON     bool // --json
+	Quiet    bool // --quiet: ids only
+
+	// human: stdout is a terminal, so symbols and summaries are welcome.
+	human bool
+	// color: colour on stdout; errColor: colour on stderr.
+	color, errColor bool
+	// live: stderr is a terminal, so progress can redraw a line.
+	live bool
+}
+
+// New prints to stdout and stderr, in colour only to a terminal and never with NO_COLOR.
+func New(jsonOut, quiet bool) *Printer {
+	noColor := os.Getenv("NO_COLOR") != "" || os.Getenv("TERM") == "dumb"
+	outTTY := term.IsTerminal(int(os.Stdout.Fd()))
+	errTTY := term.IsTerminal(int(os.Stderr.Fd()))
+	return &Printer{
+		Out: os.Stdout, Err: os.Stderr, JSON: jsonOut, Quiet: quiet,
+		human: outTTY, color: outTTY && !noColor, errColor: errTTY && !noColor, live: errTTY && os.Getenv("CI") == "",
+	}
+}
+
+// Interactive reports whether a person can be asked: stdin and stderr are terminals.
+func Interactive() bool {
+	return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stderr.Fd()))
+}
+
+// RawJSON prints a JSON body indented, as it came.
+func (p *Printer) RawJSON(body []byte) {
+	var buf bytes.Buffer
+	if json.Indent(&buf, body, "", "  ") != nil {
+		buf.Reset()
+		buf.Write(body)
+	}
+	buf.WriteByte('\n')
+	_, _ = p.Out.Write(buf.Bytes())
+}
+
+// Value prints v as indented JSON.
+func (p *Printer) Value(v any) {
+	data, _ := json.MarshalIndent(v, "", "  ")
+	_, _ = fmt.Fprintln(p.Out, string(data))
+}
+
+// Line prints to stdout as given.
+func (p *Printer) Line(format string, a ...any) { fmt.Fprintf(p.Out, format+"\n", a...) }
+
+// Note, Success, Warn and Next clean their arguments (Clean): only the
+// format is the CLI's own text. Line prints as given, for secrets, keys and
+// files that must come out byte for byte; clean outside text before it.
+func (p *Printer) Note(format string, a ...any) { fmt.Fprintf(p.Err, format+"\n", cleanArgs(a)...) }
+
+// Success is a ✓ line on stderr.
+func (p *Printer) Success(format string, a ...any) {
+	fmt.Fprintf(p.Err, "%s %s\n", paint(p.errColor, green, "✓"), fmt.Sprintf(format, cleanArgs(a)...))
+}
+
+// Warn is a ! line on stderr, left out with --json and --quiet.
+func (p *Printer) Warn(format string, a ...any) {
+	if p.Quiet || p.JSON {
+		return
+	}
+	fmt.Fprintf(p.Err, "%s %s\n", paint(p.errColor, yellow, "!"), fmt.Sprintf(format, cleanArgs(a)...))
+}
+
+// Next suggests a command to run next, on stderr.
+func (p *Printer) Next(label, command string) {
+	if p.Quiet || p.JSON {
+		return
+	}
+	fmt.Fprintf(p.Err, "%s %s\n", paint(p.errColor, dim, label+":"), Clean(command))
+}
+
+// Summary is a count under a list, on stderr, only for a person reading it.
+func (p *Printer) Summary(parts ...string) {
+	if !p.human {
+		return
+	}
+	var kept []string
+	for _, s := range parts {
+		if s != "" {
+			kept = append(kept, s)
+		}
+	}
+	fmt.Fprintf(p.Err, "\n%s\n", paint(p.errColor, dim, strings.Join(kept, " · ")))
+}
+
+// Human reports whether stdout is a terminal, so a person reads it.
+func (p *Printer) Human() bool { return p.human }
+
+// Live reports whether stderr is a terminal outside CI, so progress can redraw a line.
+func (p *Printer) Live() bool { return p.live }
+
+func (p *Printer) Dim(s string) string  { return paint(p.color, dim, s) }
+func (p *Printer) Bold(s string) string { return paint(p.color, bold, s) }
+
+// State is a resource state with its symbol: ● running, ○ stopped, ◐ on its
+// way, ✗ failed. Piped, it is the plain word.
+func (p *Printer) State(s string) string {
+	if !p.human {
+		return s
+	}
+	glyph, style := stateLook(s)
+	return paint(p.color, style, glyph+" "+s)
+}
+
+func stateLook(s string) (string, string) {
+	switch s {
+	case "ready", "valid", "succeeded", "running", "active", "on", "enabled", "done", "ok", "issued", "pointing":
+		return "●", green
+	case "canceled", "paused", "stopped", "off", "disabled", "skipped", "none":
+		return "○", dim
+	case "failed", "misconfigured", "error", "firing":
+		return "✗", red
+	case "unknown":
+		return "?", dim
+	default: // queued, building, pending, starting, deleting…
+		return "◐", yellow
+	}
+}
+
+// Table prints rows under a header in aligned columns, measured by what is
+// visible, so colour does not throw the alignment. Piped, the header stays
+// and symbols and colour go.
+func (p *Printer) Table(header []string, rows [][]string) {
+	all := make([][]string, 0, len(rows)+1)
+	for _, row := range append([][]string{header}, rows...) {
+		cleaned := make([]string, len(row))
+		for i, cell := range row {
+			cleaned[i] = p.cleanStyled(cell, p.color)
+		}
+		all = append(all, cleaned)
+	}
+	widths := make([]int, len(header))
+	for _, row := range all {
+		for i, cell := range row {
+			if w := visibleWidth(cell); i < len(widths) && w > widths[i] {
+				widths[i] = w
+			}
+		}
+	}
+	var b strings.Builder
+	for r, row := range all {
+		for i, cell := range row {
+			if r == 0 {
+				cell = paint(p.color, dim, strings.ToUpper(cell))
+			}
+			b.WriteString(cell)
+			if i < len(row)-1 {
+				b.WriteString(strings.Repeat(" ", widths[i]-visibleWidth(cell)+3))
+			}
+		}
+		b.WriteByte('\n')
+	}
+	_, _ = io.WriteString(p.Out, b.String())
+}
+
+// Pair is a label and its value.
+type Pair [2]string
+
+// Detail is one resource: a title line (name and state), a subtitle (its
+// id), groups of label/value pairs, and what to run next.
+type Detail struct {
+	Title, State, Subtitle string
+	Sections               [][]Pair
+	Next                   [][2]string // label, command
+}
+
+// Print shows one resource.
+func (p *Printer) Print(d Detail) {
+	var b strings.Builder
+	b.WriteString(p.Bold(Clean(d.Title)))
+	if d.State != "" {
+		b.WriteString("  " + p.cleanStyled(d.State, p.color))
+	}
+	b.WriteByte('\n')
+	if d.Subtitle != "" {
+		b.WriteString(p.Dim(Clean(d.Subtitle)) + "\n")
+	}
+	width := 0
+	for _, sec := range d.Sections {
+		for _, pair := range sec {
+			width = max(width, visibleWidth(Clean(pair[0])))
+		}
+	}
+	for _, sec := range d.Sections {
+		if len(sec) == 0 {
+			continue
+		}
+		b.WriteByte('\n')
+		for _, pair := range sec {
+			label := Clean(pair[0])
+			fmt.Fprintf(&b, "  %s%s  %s\n", p.Dim(label), strings.Repeat(" ", max(0, width-visibleWidth(label))), p.cleanStyled(pair[1], p.color))
+		}
+	}
+	_, _ = io.WriteString(p.Out, b.String())
+	if len(d.Next) > 0 && !p.Quiet {
+		fmt.Fprintln(p.Err)
+		for _, n := range d.Next {
+			p.Next(n[0], n[1])
+		}
+	}
+}
+
+// Error writes a failure for a person: ✗ and the first line, the rest under
+// it, and parenthesised details (code, request id) and "See:" lines dimmed.
+func (p *Printer) Error(err error) {
+	lines := strings.Split(err.Error(), "\n")
+	for i, l := range lines {
+		lines[i] = Clean(l)
+	}
+	// Go errors start lower-case; a sentence on screen does not.
+	if r, size := utf8.DecodeRuneInString(lines[0]); r != utf8.RuneError {
+		lines[0] = strings.ToUpper(string(r)) + lines[0][size:]
+	}
+	fmt.Fprintf(p.Err, "%s %s\n", paint(p.errColor, red, "✗"), paint(p.errColor, bold, lines[0]))
+	for _, l := range lines[1:] {
+		t := strings.TrimSpace(l)
+		if strings.HasPrefix(t, "(") || strings.HasPrefix(t, "See:") {
+			l = paint(p.errColor, dim, l)
+		}
+		fmt.Fprintf(p.Err, "  %s\n", strings.TrimPrefix(l, "  "))
+	}
+}
+
+// Or is *s, or a dash for nil or empty.
+func Or(s *string) string {
+	if s == nil || *s == "" {
+		return "—"
+	}
+	return *s
+}
+
+const (
+	bold   = "1"
+	dim    = "2"
+	red    = "31"
+	green  = "32"
+	yellow = "33"
+)
+
+func paint(on bool, code, s string) string {
+	if !on || s == "" {
+		return s
+	}
+	return "\x1b[" + code + "m" + s + "\x1b[0m"
+}
+
+var ansi = regexp.MustCompile("\x1b\\[[0-9;]*m")
+
+func visibleWidth(s string) int { return utf8.RuneCountInString(ansi.ReplaceAllString(s, "")) }

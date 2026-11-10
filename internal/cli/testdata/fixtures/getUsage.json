@@ -1,0 +1,60 @@
+{
+  "logs_available": true,
+  "month": "2026-11",
+  "current": true,
+  "months": [
+    "2026-11"
+  ],
+  "days": [
+    "2026-11-10"
+  ],
+  "totals": {
+    "requests": 123456,
+    "bandwidth_bytes": 52428800,
+    "build_minutes": 12.5,
+    "function_runs": 42,
+    "deployments": 7,
+    "log_lines": 900
+  },
+  "deleted_projects": {
+    "requests": 0,
+    "bandwidth_bytes": 0,
+    "build_minutes": 0,
+    "function_runs": 0,
+    "deployments": 0,
+    "log_lines": 0
+  },
+  "previous": null,
+  "daily": [
+    {
+      "date": "2026-11-10",
+      "totals": {
+        "requests": 123456,
+        "bandwidth_bytes": 52428800,
+        "build_minutes": 12.5,
+        "function_runs": 42,
+        "deployments": 7,
+        "log_lines": 900
+      }
+    }
+  ],
+  "by_project": [
+    {
+      "project_id": "prj_test1",
+      "slug": "web",
+      "name": "web",
+      "totals": {
+        "requests": 123456,
+        "bandwidth_bytes": 52428800,
+        "build_minutes": 12.5,
+        "function_runs": 42,
+        "deployments": 7,
+        "log_lines": 900
+      },
+      "previous": null,
+      "daily": [],
+      "by_environment": {},
+      "preview_branches": 0
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "items": [
+    {
+      "n": 3,
+      "at": "2026-11-10T09:30:00Z",
+      "step": "building",
+      "tone": "good",
+      "text": "Built in 1.2s"
+    }
+  ],
+  "next_after": 3,
+  "done": true
+}

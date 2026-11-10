@@ -1,0 +1,46 @@
+name: Live test
+
+# Runs the live test (e2e/, TestLive) against staging when started by hand:
+# the real binary links a new project, deploys a small folder, reads its log,
+# adds and pulls a variable, and deletes the project. It needs the secret
+# ORBITS_E2E_TOKEN (a full-access API token of a test team) and the variable
+# ORBITS_E2E_TEAM.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Use an orbits-go checkout if it is not published yet
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -q '^github.com/The-Orbits/orbits-go ' go.sum; then exit 0; fi
+          git clone --depth 1 https://github.com/The-Orbits/orbits-go "$RUNNER_TEMP/orbits-go"
+          cat > "$RUNNER_TEMP/go.work" <<WORK
+          go 1.27.1
+          use $GITHUB_WORKSPACE
+          use $RUNNER_TEMP/orbits-go
+          replace github.com/The-Orbits/orbits-go v0.1.0 => $RUNNER_TEMP/orbits-go
+          WORK
+          echo "GOWORK=$RUNNER_TEMP/go.work" >> "$GITHUB_ENV"
+
+      - run: go test -run TestLive -v -count=1 ./e2e
+        env:
+          ORBITS_E2E_TOKEN: ${{ secrets.ORBITS_E2E_TOKEN }}
+          ORBITS_E2E_TEAM: ${{ vars.ORBITS_E2E_TEAM }}
+          ORBITS_E2E_API_URL: https://stagingapi.theorbits.app/v1

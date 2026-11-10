@@ -1,0 +1,10 @@
+{
+  "type": "about:blank",
+  "title": "Payment Required",
+  "status": 402,
+  "detail": "Functions need the Pro plan.",
+  "code": "plan_required",
+  "required_plan": "pro",
+  "feature": "functions",
+  "request_id": "req_test3"
+}

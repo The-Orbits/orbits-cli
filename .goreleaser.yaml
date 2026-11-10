@@ -1,0 +1,75 @@
+# Releases: push a tag (v0.1.0) and .github/workflows/release.yml runs this.
+# It builds orbits for macOS and Linux (amd64, arm64), publishes the archives
+# and checksums.txt on the GitHub release (what install.sh and "orbits update"
+# download), and updates the cask in The-Orbits/homebrew-tap.
+version: 2
+
+project_name: orbits
+
+builds:
+  - id: orbits
+    main: ./cmd/orbits
+    binary: orbits
+    env:
+      - CGO_ENABLED=0
+    goos: [darwin, linux]
+    goarch: [amd64, arm64]
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/The-Orbits/orbits-cli/internal/cli.Version={{ .Tag }}
+
+archives:
+  - id: orbits
+    formats: [tar.gz]
+    # Fixed names, so install.sh and "orbits update" find them in any release.
+    name_template: "orbits_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+# The release notes are the version's section of CHANGELOG.md, which the
+# release workflow passes with --release-notes.
+changelog:
+  disable: true
+
+release:
+  github:
+    owner: The-Orbits
+    name: orbits-cli
+  prerelease: auto
+
+# Homebrew: a cask in The-Orbits/homebrew-tap (GoReleaser's replacement for
+# formulas of prebuilt binaries), so "brew install The-Orbits/tap/orbits" works.
+homebrew_casks:
+  - name: orbits
+    repository:
+      owner: The-Orbits
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Casks
+    homepage: https://orbits.africa
+    description: Deploy and manage Orbits projects from the terminal
+    license: MIT
+    binaries: [orbits]
+    commit_author:
+      name: github-actions[bot]
+      email: 41898282+github-actions[bot]@users.noreply.github.com
+    commit_msg_template: "orbits {{ .Tag }}"
+    # A pre-release does not move the cask.
+    skip_upload: auto
+    generate_completions_from_executable:
+      args: [completion]
+      shells: [bash, zsh, fish]
+    hooks:
+      post:
+        # The binary is not notarized: let macOS run it.
+        install_steps: |
+          on_macos do
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/orbits"]
+          end

@@ -1,0 +1,49 @@
+{
+  "items": [
+    {
+      "id": "prj_one",
+      "slug": "one",
+      "name": "one",
+      "free_address": "one.theorbits.app",
+      "workload": {
+        "type": "static"
+      },
+      "source": null,
+      "source_kind": "upload",
+      "region": "abj-1",
+      "status": "pending",
+      "paused": false,
+      "git": {
+        "deploy_on_push": true,
+        "preview_pull_requests": true,
+        "comment_on_pull_requests": true
+      },
+      "latest_deployment_id": null,
+      "latest_deployment": null,
+      "created_at": "2026-11-10T09:30:00Z"
+    },
+    {
+      "id": "prj_two",
+      "slug": "two",
+      "name": "two",
+      "free_address": "two.theorbits.app",
+      "workload": {
+        "type": "static"
+      },
+      "source": null,
+      "source_kind": "upload",
+      "region": "abj-1",
+      "status": "pending",
+      "paused": false,
+      "git": {
+        "deploy_on_push": true,
+        "preview_pull_requests": true,
+        "comment_on_pull_requests": true
+      },
+      "latest_deployment_id": null,
+      "latest_deployment": null,
+      "created_at": "2026-11-10T09:30:00Z"
+    }
+  ],
+  "next_cursor": "cursor_2"
+}

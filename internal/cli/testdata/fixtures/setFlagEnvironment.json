@@ -1,0 +1,39 @@
+{
+  "key": "new-checkout",
+  "description": "The new checkout",
+  "type": "boolean",
+  "environments": {
+    "production": {
+      "on": false,
+      "rollout": 25,
+      "value": null,
+      "rules": []
+    },
+    "preview": {
+      "on": true,
+      "rollout": 100,
+      "value": null,
+      "rules": []
+    },
+    "development": {
+      "on": false,
+      "rollout": 100,
+      "value": null,
+      "rules": []
+    }
+  },
+  "created_by": {
+    "id": "usr_test1",
+    "name": "Test User",
+    "email": "person@example.com",
+    "avatar_url": null
+  },
+  "updated_by": {
+    "id": "usr_test1",
+    "name": "Test User",
+    "email": "person@example.com",
+    "avatar_url": null
+  },
+  "created_at": "2026-11-10T09:30:00Z",
+  "updated_at": "2026-11-10T09:30:00Z"
+}

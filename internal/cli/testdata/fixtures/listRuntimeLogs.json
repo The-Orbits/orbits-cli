@@ -1,0 +1,42 @@
+{
+  "as_of": "2026-11-10T09:30:00Z",
+  "items": [
+    {
+      "id": "log_2",
+      "at": "2026-11-10T09:30:02Z",
+      "source": "requests",
+      "level": "error",
+      "status": 500,
+      "method": "GET",
+      "path": "/checkout",
+      "duration_ms": 41,
+      "message": null,
+      "stream": null,
+      "request_id": "0123456789abcdef0123456789abcdef",
+      "host": "web.theorbits.app",
+      "region": "abj-1",
+      "deployment": null,
+      "headers": []
+    },
+    {
+      "id": "log_1",
+      "at": "2026-11-10T09:30:01Z",
+      "source": "functions",
+      "level": "info",
+      "status": null,
+      "method": null,
+      "path": null,
+      "duration_ms": null,
+      "message": "cart loaded",
+      "stream": "stdout",
+      "request_id": null,
+      "host": null,
+      "region": "abj-1",
+      "deployment": null,
+      "headers": []
+    }
+  ],
+  "total": 2,
+  "total_capped": false,
+  "next_cursor": null
+}

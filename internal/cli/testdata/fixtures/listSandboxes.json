@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "name": "try-upgrade",
+      "runtime": "node22",
+      "size": "small",
+      "source": null,
+      "state": "running",
+      "started_at": "2026-11-10T09:30:00Z",
+      "stopped_at": null,
+      "started_by": {
+        "id": "usr_test1",
+        "name": "Test User",
+        "email": "person@example.com",
+        "avatar_url": null
+      },
+      "stop_after": 30,
+      "url": "https://try-upgrade.sandbox.theorbits.app",
+      "terminal": [],
+      "usage": {
+        "cpu": 0,
+        "memory_gb": 0,
+        "disk_gb": 0,
+        "idle_minutes": 0
+      }
+    }
+  ],
+  "running": 1,
+  "limit": 3,
+  "as_of": "2026-11-10T09:30:00Z"
+}
