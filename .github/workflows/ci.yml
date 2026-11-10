@@ -25,24 +25,6 @@ jobs:
         with:
           go-version-file: go.mod
 
-      # Until orbits-go v0.1.0 is published (and go.sum has it), build against
-      # its main branch through a workspace outside the repository.
-      - name: Use an orbits-go checkout if it is not published yet
-        shell: bash
-        run: |
-          set -euo pipefail
-          if grep -q '^github.com/The-Orbits/orbits-go ' go.sum; then
-            echo "orbits-go comes from go.sum"; exit 0
-          fi
-          git clone --depth 1 https://github.com/The-Orbits/orbits-go "$RUNNER_TEMP/orbits-go"
-          cat > "$RUNNER_TEMP/go.work" <<WORK
-          go 1.27.1
-          use $GITHUB_WORKSPACE
-          use $RUNNER_TEMP/orbits-go
-          replace github.com/The-Orbits/orbits-go v0.1.0 => $RUNNER_TEMP/orbits-go
-          WORK
-          echo "GOWORK=$RUNNER_TEMP/go.work" >> "$GITHUB_ENV"
-
       - name: gofmt
         run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
 
@@ -52,6 +34,12 @@ jobs:
 
       # Every platform install.sh offers must still build.
       - run: make dist VERSION=ci
+
+      # And the npm packages made from them must install and run.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: make npm VERSION=ci
 
       - name: install.sh parses
         run: bash -n install.sh

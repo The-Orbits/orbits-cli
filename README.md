@@ -40,8 +40,19 @@ With Homebrew:
 brew install The-Orbits/tap/orbits
 ```
 
+With npm (or pnpm, Yarn or Bun), Node.js 18 or later:
+
+```sh
+npm install -g @useorbits/cli
+npx @useorbits/cli deploy        # or run it without installing
+```
+
+The package runs the same binary, from one of its platform packages (`@useorbits/cli-darwin-arm64` and so on), which
+npm picks for your machine: keep optional dependencies on. How it is built is in [npm/](npm/).
+
 Or download an archive from the releases page yourself. `orbits update` installs a newer release in place (checked
-against its checksums too); a Homebrew install is upgraded with `brew upgrade orbits`. The CLI says when a newer
+against its checksums too); a Homebrew install is upgraded with `brew upgrade orbits`, and an npm one with
+`npm install -g @useorbits/cli@latest`. The CLI says when a newer
 version is out, at most once a day; `ORBITS_NO_UPDATE_NOTIFIER=1` turns that off.
 
 ## Sign in

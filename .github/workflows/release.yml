@@ -3,19 +3,24 @@ name: Release
 # Push a tag to release:  git tag v0.1.0 && git push origin v0.1.0
 # GoReleaser builds macOS and Linux (amd64, arm64), publishes the archives and
 # checksums.txt on the GitHub release, and updates the cask in
-# The-Orbits/homebrew-tap.
-# A tag with a hyphen (v0.2.0-rc.1) is a pre-release: not "latest", and the
-# cask stays where it was.
+# The-Orbits/homebrew-tap. Then the npm job publishes @useorbits/cli and its
+# four platform packages, built from that release's own archives.
+# A tag with a hyphen (v0.2.0-rc.1) is a pre-release: not "latest", the cask
+# stays where it was, and npm gets it under the dist-tag "next".
 #
 # Needs the secret HOMEBREW_TAP_TOKEN: a token that may push to
-# The-Orbits/homebrew-tap (nothing else).
+# The-Orbits/homebrew-tap (nothing else). npm is authenticated by trusted
+# publishing (OIDC): each of the five packages names this workflow
+# (release.yml) as its trusted publisher on npmjs.com, so no npm token is kept
+# here. The very first publish of a package, before it exists to be
+# configured, can use the secret NPM_TOKEN instead; delete it afterwards.
 
 on:
   push:
     tags: ["v*"]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release
@@ -25,6 +30,8 @@ jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
         with:
@@ -66,3 +73,56 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+  # Separate from the release, so a failed publish can be re-run on its own: it
+  # skips any package version already on npm.
+  npm:
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install -g npm@^11.5.1
+
+      - name: Download the release's archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir dist --pattern 'orbits_*.tar.gz' --pattern checksums.txt
+
+      - name: Build the packages
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          node npm/build.mjs --version "$TAG" --dist dist --out dist/npm
+          npm/smoke.sh dist/npm
+
+      # Platform packages first (build.mjs lists them first), so @useorbits/cli
+      # never points at versions that are not published yet.
+      - name: Publish
+        env:
+          TAG: ${{ github.ref_name }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          case "$TAG" in *-*) dist_tag=next ;; *) dist_tag=latest ;; esac
+          for dir in dist/npm/cli-* dist/npm/cli; do
+            name=$(node -p "require('./$dir/package.json').name")
+            version=$(node -p "require('./$dir/package.json').version")
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "$name@$version is already on npm"; continue
+            fi
+            (cd "$dir" && npm publish --provenance --access public --tag "$dist_tag")
+          done

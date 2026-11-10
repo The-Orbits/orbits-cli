@@ -4,6 +4,8 @@ What changed in each version of the Orbits CLI. Every pull request that changes 
 **Unreleased**. Releasing renames that heading to the version and its date (`## v0.2.0 — 2026-12-01`) and pushes the
 tag `v0.2.0`.
 
+## Unreleased
+
 ## v0.1.0 — 2026-11-10
 
 ### Added
@@ -31,3 +33,7 @@ tag `v0.2.0`.
   release's `checksums.txt`; releases by GoReleaser with a Homebrew cask in `The-Orbits/homebrew-tap`
   (`brew install The-Orbits/tap/orbits`).
 - `ORBITS_TOKEN`, `ORBITS_API_URL`, `ORBITS_WEB_URL`, `ORBITS_TEAM` and `ORBITS_PROFILE` for CI and staging.
+- On npm: `npm install -g @useorbits/cli`, or `npx @useorbits/cli`, with a platform package per machine
+  (`@useorbits/cli-darwin-arm64`, `-darwin-x64`, `-linux-arm64`, `-linux-x64`) holding the same binary as the GitHub
+  release. `orbits update` and the new-version notice name the right upgrade for how the CLI was installed: `brew
+  upgrade orbits`, `npm install -g @useorbits/cli@latest`, or `orbits update`.

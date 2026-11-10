@@ -216,10 +216,39 @@ func replace(exe string, bin []byte) error {
 // ErrNotWritable is a binary in a folder the CLI may not write.
 var ErrNotWritable = errors.New("not writable")
 
-// Homebrew reports whether exe was installed by Homebrew, which should
-// upgrade it itself.
-func Homebrew(exe string) bool {
-	return strings.Contains(exe, "/Caskroom/") || strings.Contains(exe, "/Cellar/") || strings.Contains(exe, "/homebrew/")
+// NPMPackage is the npm package the CLI is published as. It installs the
+// binary from one of its platform packages, @useorbits/cli-<os>-<arch>.
+const NPMPackage = "@useorbits/cli"
+
+// The package managers that install the CLI and upgrade it themselves.
+const (
+	Homebrew = "homebrew"
+	NPM      = "npm"
+)
+
+// Manager reports which package manager installed exe: Homebrew, NPM (npm,
+// pnpm, Yarn or Bun, which all leave it in a node_modules folder), or "" for
+// install.sh or a downloaded archive, which "orbits update" replaces in place.
+func Manager(exe string) string {
+	exe = filepath.ToSlash(exe)
+	switch {
+	case strings.Contains(exe, "/node_modules/"+NPMPackage+"-"):
+		return NPM
+	case strings.Contains(exe, "/Caskroom/") || strings.Contains(exe, "/Cellar/") || strings.Contains(exe, "/homebrew/"):
+		return Homebrew
+	}
+	return ""
+}
+
+// UpgradeCommand is what upgrades a CLI that manager installed.
+func UpgradeCommand(manager string) string {
+	switch manager {
+	case Homebrew:
+		return "brew upgrade orbits"
+	case NPM:
+		return "npm install -g " + NPMPackage + "@latest"
+	}
+	return "orbits update"
 }
 
 // State is the last check for a newer version, kept between runs so the

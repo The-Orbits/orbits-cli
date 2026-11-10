@@ -134,9 +134,22 @@ func TestInstallUnknownVersion(t *testing.T) {
 	}
 }
 
-func TestHomebrew(t *testing.T) {
-	if !Homebrew("/opt/homebrew/Cellar/orbits/0.1.0/bin/orbits") || !Homebrew("/usr/local/Caskroom/orbits/0.1.0/orbits") || Homebrew("/Users/x/.orbits/bin/orbits") {
-		t.Fatal("Homebrew")
+func TestManager(t *testing.T) {
+	for exe, want := range map[string]string{
+		"/opt/homebrew/Cellar/orbits/0.1.0/bin/orbits":                                                                               Homebrew,
+		"/usr/local/Caskroom/orbits/0.1.0/orbits":                                                                                    Homebrew,
+		"/usr/local/lib/node_modules/@useorbits/cli-darwin-arm64/bin/orbits":                                                         NPM,
+		"/Users/x/.bun/install/global/node_modules/@useorbits/cli-linux-x64/bin/orbits":                                              NPM,
+		"/Users/x/Library/pnpm/global/5/.pnpm/@useorbits+cli-darwin-arm64@0.1.0/node_modules/@useorbits/cli-darwin-arm64/bin/orbits": NPM,
+		"/Users/x/.orbits/bin/orbits":                                                                                                "",
+		"/usr/local/bin/orbits":                                                                                                      "",
+	} {
+		if got := Manager(exe); got != want {
+			t.Errorf("Manager(%q) = %q, want %q", exe, got, want)
+		}
+	}
+	if UpgradeCommand(NPM) != "npm install -g @useorbits/cli@latest" || UpgradeCommand(Homebrew) != "brew upgrade orbits" || UpgradeCommand("") != "orbits update" {
+		t.Fatal("UpgradeCommand")
 	}
 }
 

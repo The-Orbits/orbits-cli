@@ -32,8 +32,8 @@ replace github.com/The-Orbits/orbits-go v0.1.0 => /path/to/orbits-go
 GOWORK=/path/outside/the/repo/go.work make test
 ```
 
-CI does the same automatically. Releases are blocked until `go.sum` is complete, so the SDK must be published (and
-`go get github.com/The-Orbits/orbits-go@<version> && go mod tidy` run here) before the first release. **Never commit a
+CI and releases build from `go.sum` alone, so a change that needs a new SDK version waits until that version is
+published and `go get github.com/The-Orbits/orbits-go@<version> && go mod tidy` has been run here. **Never commit a
 `go.work` file or a `replace` directive.**
 
 ## Checks
@@ -71,6 +71,7 @@ internal/update/     newer releases on GitHub, and installing them in place
 e2e/                 the live test
 install.sh           what https://orbits.africa/install serves
 .goreleaser.yaml     release archives, checksums and the Homebrew cask
+npm/                 the npm packages: the launcher (orbits.js), build.mjs that makes them from a release's archives
 docs/                the browser sign-in protocol
 ```
 
@@ -96,4 +97,18 @@ docs/                the browser sign-in protocol
 
 Rename **Unreleased** in CHANGELOG.md to the version and date (`## v0.2.0 — 2026-12-01`), merge, then push the tag
 `v0.2.0`. The release workflow runs GoReleaser: archives for macOS and Linux (amd64, arm64) and `checksums.txt` on the
-GitHub release, and the Homebrew cask in `The-Orbits/homebrew-tap`. A tag with a hyphen (`v0.2.0-rc.1`) is a pre-release.
+GitHub release, and the Homebrew cask in `The-Orbits/homebrew-tap`. Then its `npm` job builds `@useorbits/cli` and
+its four platform packages from that release's archives (`npm/build.mjs`) and publishes them, platform packages first.
+A tag with a hyphen (`v0.2.0-rc.1`) is a pre-release: the cask stays put and npm gets it under the dist-tag `next`.
+
+`make dist && make npm` builds the npm packages locally and runs this machine's through the launcher.
+
+### What the release needs
+
+- The repository public, so `install.sh`, `orbits update` and Homebrew can download the release's archives.
+- `orbits-go` public, at the version `go.sum` names, so CI and the release can build.
+- The secret `HOMEBREW_TAP_TOKEN`: a fine-grained token with contents read and write on `The-Orbits/homebrew-tap` only.
+- On npmjs.com, each of `@useorbits/cli`, `@useorbits/cli-darwin-arm64`, `-darwin-x64`, `-linux-arm64` and
+  `-linux-x64` with a trusted publisher: GitHub Actions, `The-Orbits/orbits-cli`, workflow `release.yml`. A package
+  must exist before it can be configured, so the first release publishes with the secret `NPM_TOKEN` (an automation
+  token of the `useorbits` organization); configure the five, then delete the secret.

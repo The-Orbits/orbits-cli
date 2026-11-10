@@ -25,20 +25,6 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Use an orbits-go checkout if it is not published yet
-        shell: bash
-        run: |
-          set -euo pipefail
-          if grep -q '^github.com/The-Orbits/orbits-go ' go.sum; then exit 0; fi
-          git clone --depth 1 https://github.com/The-Orbits/orbits-go "$RUNNER_TEMP/orbits-go"
-          cat > "$RUNNER_TEMP/go.work" <<WORK
-          go 1.27.1
-          use $GITHUB_WORKSPACE
-          use $RUNNER_TEMP/orbits-go
-          replace github.com/The-Orbits/orbits-go v0.1.0 => $RUNNER_TEMP/orbits-go
-          WORK
-          echo "GOWORK=$RUNNER_TEMP/go.work" >> "$GITHUB_ENV"
-
       - run: go test -run TestLive -v -count=1 ./e2e
         env:
           ORBITS_E2E_TOKEN: ${{ secrets.ORBITS_E2E_TOKEN }}

@@ -48,8 +48,9 @@ func newUpdateCmd(a *app) *cobra.Command {
 		Short:   "Install the latest version of the CLI",
 		Long: `Install the latest version of the CLI, or the version given, in place of
 this one, from its GitHub releases. The download is checked against the
-release's checksums.txt first. A CLI installed with Homebrew is upgraded with
-brew instead.
+release's checksums.txt first. A CLI installed with Homebrew or npm is
+upgraded with that instead: brew upgrade orbits, or
+npm install -g @useorbits/cli@latest.
 
 The CLI says when a newer version is out, at most once a day. Set
 ORBITS_NO_UPDATE_NOTIFIER=1 to turn that off.`,
@@ -77,7 +78,7 @@ ORBITS_NO_UPDATE_NOTIFIER=1 to turn that off.`,
 				}
 				if update.Newer(Version, latest) {
 					a.out.Line("%s", latest)
-					a.out.Next(fmt.Sprintf("orbits %s is out (you have %s). Install it", latest, Version), "orbits update")
+					a.out.Next(fmt.Sprintf("orbits %s is out (you have %s). Install it", latest, Version), upgradeCommand())
 				} else {
 					a.out.Line("%s", Version)
 					a.out.Note("orbits %s is the latest version.", Version)
@@ -104,8 +105,11 @@ ORBITS_NO_UPDATE_NOTIFIER=1 to turn that off.`,
 			if exe, err = filepath.EvalSymlinks(exe); err != nil {
 				return err
 			}
-			if update.Homebrew(exe) {
-				return errors.New("this orbits was installed with Homebrew: run brew upgrade orbits")
+			switch m := update.Manager(exe); m {
+			case update.Homebrew:
+				return fmt.Errorf("this orbits was installed with Homebrew: run %s", update.UpgradeCommand(m))
+			case update.NPM:
+				return fmt.Errorf("this orbits was installed from npm: run %s (or your package manager's equivalent)", update.UpgradeCommand(m))
 			}
 			steps := a.out.Steps()
 			steps.Start(fmt.Sprintf("Installing orbits %s", target))
@@ -122,6 +126,18 @@ ORBITS_NO_UPDATE_NOTIFIER=1 to turn that off.`,
 	}
 	cmd.Flags().BoolVar(&check, "check", false, "only print the latest version")
 	return cmd
+}
+
+// upgradeCommand is what upgrades this CLI, by how it was installed.
+func upgradeCommand() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return update.UpgradeCommand("")
+	}
+	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		exe = resolved
+	}
+	return update.UpgradeCommand(update.Manager(exe))
 }
 
 func updateStatePath() string {
@@ -186,7 +202,7 @@ func (a *app) updateNotice(found <-chan string) {
 		if update.Newer(Version, latest) {
 			a.out.Note("")
 			a.out.Note("orbits %s is out (you have %s).", latest, Version)
-			a.out.Next("Update", "orbits update")
+			a.out.Next("Update", upgradeCommand())
 		}
 	case <-time.After(2 * time.Second):
 	}

@@ -4,12 +4,15 @@
 # make dist      every platform's archive and checksums.txt in ./dist, named
 #                as the GitHub release has them (releases themselves are made
 #                by GoReleaser, see .goreleaser.yaml)
+# make npm       the npm packages (@useorbits/cli and its platform packages)
+#                from ./dist in ./dist/npm, and a run of this machine's
+#                through the launcher (after make dist)
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X github.com/The-Orbits/orbits-cli/internal/cli.Version=$(VERSION)
 PLATFORMS := darwin_arm64 darwin_amd64 linux_amd64 linux_arm64
 
-.PHONY: build test e2e dist clean
+.PHONY: build test e2e dist npm clean
 
 build:
 	go build -trimpath -ldflags "$(LDFLAGS)" -o orbits ./cmd/orbits
@@ -33,6 +36,10 @@ dist: clean
 		echo "built orbits_$$p.tar.gz"; \
 	done
 	@cd dist && shasum -a 256 *.tar.gz > checksums.txt
+
+npm:
+	node npm/build.mjs --version $(if $(filter v%,$(VERSION)),$(VERSION),v0.0.0-$(VERSION)) --dist dist --out dist/npm
+	npm/smoke.sh dist/npm
 
 clean:
 	rm -f orbits
