@@ -6,6 +6,10 @@ version: 2
 
 project_name: orbits
 
+before:
+  hooks:
+    - ./scripts/completions.sh
+
 builds:
   - id: orbits
     main: ./cmd/orbits
@@ -28,6 +32,7 @@ archives:
       - LICENSE
       - README.md
       - CHANGELOG.md
+      - completions/*
 
 checksum:
   name_template: checksums.txt
@@ -63,12 +68,15 @@ homebrew_casks:
     commit_msg_template: "orbits {{ .Tag }}"
     # A pre-release does not move the cask.
     skip_upload: auto
-    generate_completions_from_executable:
-      args: [completion]
-      shells: [bash, zsh, fish]
+    # From the archive, not by running orbits: see scripts/completions.sh.
+    completions:
+      bash: completions/orbits.bash
+      zsh: completions/orbits.zsh
+      fish: completions/orbits.fish
     hooks:
       post:
-        # The binary is not notarized: let macOS run it.
+        # The binary is not notarized: clear the quarantine flag Homebrew sets
+        # on downloads, or macOS refuses to run it.
         install_steps: |
           on_macos do
             run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/orbits"]

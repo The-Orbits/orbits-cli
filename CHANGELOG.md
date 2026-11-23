@@ -6,6 +6,14 @@ tag `v0.2.0`.
 
 ## Unreleased
 
+## v0.1.5 — 2026-11-23
+
+### Fixed
+
+- `brew install The-Orbits/tap/orbits` on macOS: it no longer stops at "Apple could not verify orbits". The cask
+  installs shell completions from the archive instead of running the not-yet-cleared binary to make them. The
+  archives now include `completions/` (bash, zsh, fish).
+
 ## v0.1.4 — 2026-11-23
 
 ### Fixed
