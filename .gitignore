@@ -3,3 +3,5 @@
 /coverage.out
 .orbits/
 .env*.local
+.env
+.env.*
