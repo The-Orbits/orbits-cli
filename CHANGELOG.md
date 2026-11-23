@@ -6,6 +6,13 @@ tag `v0.2.0`.
 
 ## Unreleased
 
+## v0.1.3 — 2026-11-23
+
+### Added
+
+- Homebrew: `brew install The-Orbits/tap/orbits` installs the CLI (the first release to publish the cask). No change to
+  the CLI itself.
+
 ## v0.1.2 — 2026-11-23
 
 ### Changed
