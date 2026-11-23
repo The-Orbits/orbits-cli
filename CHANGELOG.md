@@ -6,6 +6,12 @@ tag `v0.2.0`.
 
 ## Unreleased
 
+## v0.1.4 — 2026-11-23
+
+### Fixed
+
+- Homebrew: the first release to publish the cask (v0.1.3's was not pushed to the tap). No change to the CLI itself.
+
 ## v0.1.3 — 2026-11-23
 
 ### Added
