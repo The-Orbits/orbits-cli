@@ -6,6 +6,13 @@ tag `v0.2.0`.
 
 ## Unreleased
 
+## v0.1.1 — 2026-11-23
+
+### Fixed
+
+- The first published release: v0.1.0's release did not build, so `curl -fsSL https://orbits.africa/install | bash`
+  found nothing to install. v0.1.1 is v0.1.0 as described below.
+
 ## v0.1.0 — 2026-11-10
 
 ### Added

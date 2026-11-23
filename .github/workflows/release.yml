@@ -66,10 +66,22 @@ jobs:
 
       - run: bash -n install.sh
 
+      # Without the tap's token, release to GitHub (what install.sh and
+      # "orbits update" use) and leave the cask alone, rather than fail.
+      - name: Homebrew needs HOMEBREW_TAP_TOKEN
+        id: skips
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
+            echo "::warning::no HOMEBREW_TAP_TOKEN secret: the Homebrew cask is not updated"
+            echo "args=--skip=homebrew" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: goreleaser/goreleaser-action@v6
         with:
           version: "~> v2"
-          args: release --clean --release-notes ${{ runner.temp }}/notes.md
+          args: release --clean --release-notes ${{ runner.temp }}/notes.md ${{ steps.skips.outputs.args }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -123,6 +135,11 @@ jobs:
             version=$(node -p "require('./$dir/package.json').version")
             if npm view "$name@$version" version >/dev/null 2>&1; then
               echo "$name@$version is already on npm"; continue
+            fi
+            # A package's first publish needs NPM_TOKEN: trusted publishing is
+            # configured on a package that already exists.
+            if [ -z "${NODE_AUTH_TOKEN:-}" ] && ! npm view "$name" name >/dev/null 2>&1; then
+              echo "::warning::$name is not on npm yet and there is no NPM_TOKEN secret: not publishing it"; continue
             fi
             (cd "$dir" && npm publish --provenance --access public --tag "$dist_tag")
           done
