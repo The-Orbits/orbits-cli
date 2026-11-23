@@ -6,6 +6,13 @@ tag `v0.2.0`.
 
 ## Unreleased
 
+## v0.1.2 — 2026-11-23
+
+### Changed
+
+- Releases publish to npm through trusted publishing (no npm token kept in CI), with provenance, and update the
+  Homebrew cask in `The-Orbits/homebrew-tap`. No change to the CLI itself.
+
 ## v0.1.1 — 2026-11-23
 
 ### Fixed
